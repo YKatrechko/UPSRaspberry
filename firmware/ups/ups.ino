@@ -3,9 +3,16 @@
 #include <avr/interrupt.h>
 #include <avr/eeprom.h>
 #include <util/delay.h>
-// https://raw.githubusercontent.com/damellis/attiny/ide-1.6.x-boards-manager/package_damellis_attiny_index.json
 
 
+/* https://raw.githubusercontent.com/damellis/attiny/ide-1.6.x-boards-manager/package_damellis_attiny_index.json
+  Internal 1 MHz
+  low_fuses = 0x62
+  high_fuses = 0xDF
+  extended_fuses = 0xFF
+*/
+
+#define DEBUG 1
 
 // MACROS FOR EASY PIN HANDLING FOR ATMEL GCC-AVR http://www.starlino.com/port_macro.html
 //these macros are used indirectly by other macros , mainly for string concatination
@@ -32,16 +39,23 @@
 #define SIGNAL_PIN     B,1    // out for signaling shutdown to Raspberry
 #define POWER_PIN      B,0    // out for MOSFET key
 
-//"voltage" in hundrets millivolt 42 = 4,2V.
-#define U_1            33      //3,3V
-#define U_2            36      //3,6V
-#define U_3            38      //3,8V
-#define U_4            39      //3,9V
-#define U_5            41      //4,1V
+
+#define U_crit           3300      //3,3V
+#define U_low            3600      //3,6V
+
 
 #define LED_ON()     HIGH(LED_PIN)
 #define LED_OFF()    LOW(LED_PIN)
 #define LED_TOGGLE() TOGGLE(LED_PIN)
+
+#if defined DEBUG
+#define RED_TOGGLE() TOGGLE(SIGNAL_PIN)
+#define GREEN_TOGGLE() TOGGLE(POWER_PIN)
+#define RED_ON()     HIGH(SIGNAL_PIN)
+#define RED_OFF()    LOW(SIGNAL_PIN)
+#define GREEN_ON()   HIGH(POWER_PIN)
+#define GREEN_OFF()  LOW(POWER_PIN)
+#endif
 
 
 EEMEM uint16_t eeEmpty2bytes = 0;         //переменная для "отступа" от начала eeprom памяти
@@ -49,65 +63,111 @@ EEMEM uint8_t eeCalibrated = 0;           //принимает значение 
 EEMEM uint16_t eeUinp42V = 4200;       //хранит значение АЦП после калибровки при Uпитания = 4,20В
 
 char timer_counter;
-unsigned int Uinp;
+uint16_t Uinp;
 char blink = 1;
 
-// Timer 0 overflow interrupt service routine
+enum {
+  CHARGE_OK = 0,
+  BAT_OK,
+  BAT_LOW,
+  BAT_STOP,
+  ALL_STOP
+} mode;
+
+uint8_t temp, count, start;
+volatile uint8_t c;
+
+#define BAUD_C 123
+#define TxD PB4
+
+#define T_START TCCR0B = (1 << CS01) // F_CPU/8
+#define T_STOP TCCR0B = 0
+#define T_RESET TCNT0 = 0
+
+
+// Timer 1 overflow interrupt
 ISR (TIMER1_OVF_vect) {
-  // 18,38 Hz
-  if (++timer_counter > 2) {  //понижаем частоту таймера в 3 раза
-    timer_counter = 0;
-  } else {
-    return;
+
+  //  if (READ(CHARGE_PIN)) {
+  //    mode = CHARGE_OK;
+  //  } else {
+  //     Uinp = readVcc();       // read Vcc
+  //    if (Uinp <= U_crit) {
+  //      mode = BAT_STOP;
+  //    } else if (Uinp <= U_low) {
+  //      mode = BAT_LOW;
+  //    } else {
+  //      mode = BAT_OK;
+  //    }
+  //  }
+  Uinp = readVcc();       // read Vcc
+  if (Uinp <= 3300) {
+    GREEN_OFF();
+    RED_ON();
+  } else if (Uinp <= 3600) {
+    GREEN_OFF();
+    RED_TOGGLE();
+  } else if (Uinp <= 4900) {
+    RED_OFF();
+    GREEN_TOGGLE();
+  } else  {
+    RED_OFF();
+    GREEN_ON();
   }
+
+  return;
+
+  //#if defined DEBUG
+  //  GREEN_TOGGLE();
+  //  return;
+  //#endif
 
   if (eeprom_read_byte(&eeCalibrated) != 0x55) {   // Wrong eeprom
     switch (blink++) {                //бегущий огонь )))
+#if defined DEBUG
+      case 0: blink = 1; GREEN_TOGGLE(); break;
+      case 1:  case 2:  case 3: break;
+      case 4: RED_TOGGLE(); break;
+      default:  blink = 0; break;
+
+#else
       case 0: blink = 1; break;
       case 1:  case 2:  case 3: break;
       case 4: LED_TOGGLE(); break;
       default:  blink = 0; break;
+#endif
     };
-  } else {
-    //    Uinp = readVcc();       //читаем значение напряжения с входа АЦП
-    //    led_off();                         //выключаем все светодиоды
-    //    if (Uinp >= U_input(U_5)) {        //сравниваем полученное значение напряжения с забитыми в дэфайнах
-    //      //Если > U_5
-    //      HIGH(LED_GREEN);                   //включаем зелёный светодиод
-    //      blink = 1;                       //сбрасываем флаг моргания
-    //    } else if ((Uinp < U_input(U_5)) & (Uinp >= U_input(U_4))) {
-    //      //от U_4 до U_5
-    //      TOGGLE(LED_GREEN);               //"моргаем" зелёным
-    //      blink = !blink;                  //меняем (инвертируем) флаг моргания
-    //    } else if ((Uinp < U_input(U_4)) & (Uinp >= U_input(U_3))) {
-    //      //от U_3 до U_4
-    //      HIGH(LED_YELLOW);                  //включаем желтый светодиод
-    //      blink = 1;                       //сбрасываем флаг моргания
-    //    } else if ((Uinp < U_input(U_3)) & (Uinp >= U_input(U_2))) {
-    //      //от U_2 до U_3
-    //      TOGGLE(LED_YELLOW);              //"моргаем" желтым
-    //      blink = !blink;                  //меняем (инвертируем) флаг моргания
-    //    } else if ((Uinp < U_input(U_2)) & (Uinp >= U_input(U_1))) {
-    //      //от U_1 до U_2
-    //      HIGH(LED_RED);                     //включаем красный светодиод
-    //      blink = 1;                       //сбрасываем флаг моргания
-    //    } else
-    if (Uinp < U_input(U_1)) {
-      //менее U_1
-      LED_ON();                //"моргаем" красным
-      blink = !blink;                 //меняем (инвертируем) флаг моргания
-    }
   }
-}
+  //  else {
+  //    Uinp = readVcc();       //читаем значение напряжения с входа АЦП
+  //    led_off();                         //выключаем все светодиоды
+  //    if (Uinp >= U_input(U_5)) {        //сравниваем полученное значение напряжения с забитыми в дэфайнах
+  //      //Если > U_5
+  //      HIGH(LED_GREEN);                   //включаем зелёный светодиод
+  //      blink = 1;                       //сбрасываем флаг моргания
+  //    } else if ((Uinp < U_input(U_5)) & (Uinp >= U_input(U_4))) {
+  //      //от U_4 до U_5
+  //      TOGGLE(LED_GREEN);               //"моргаем" зелёным
+  //      blink = !blink;                  //меняем (инвертируем) флаг моргания
+  //    } else if ((Uinp < U_input(U_4)) & (Uinp >= U_input(U_3))) {
+  //      //от U_3 до U_4
+  //      HIGH(LED_YELLOW);                  //включаем желтый светодиод
+  //      blink = 1;                       //сбрасываем флаг моргания
+  //    } else if ((Uinp < U_input(U_3)) & (Uinp >= U_input(U_2))) {
+  //      //от U_2 до U_3
+  //      TOGGLE(LED_YELLOW);              //"моргаем" желтым
+  //      blink = !blink;                  //меняем (инвертируем) флаг моргания
+  //    } else if ((Uinp < U_input(U_2)) & (Uinp >= U_input(U_1))) {
+  //      //от U_1 до U_2
+  //      HIGH(LED_RED);                     //включаем красный светодиод
+  //      blink = 1;                       //сбрасываем флаг моргания
+  //    } else
+  //    if (Uinp < U_input(U_1)) {
+  //      //менее U_1
+  //      LED_ON();                //"моргаем" красным
+  //      blink = !blink;                 //меняем (инвертируем) флаг моргания
+  //    }
 
-//Функция вычисления значения АЦП для любого напряжения.
-unsigned int U_input(char U_x) {   //U_x - напряжение для которого необходимо вычислить значение АЦП
-  unsigned int temp;              //вычисление происходит исходя из того факта, что при калибровке устройства
-  //напряжение питания было 4,20 Вольта
-  temp = eeUinp42V * U_x / 42;    //АЦП = eeUinp42V / 42 * U_x;  Например для 3,3В: АЦП = 982 * 33 / 42 = 772
-  //Если поменять местами, то компилятор оптимизирует и на выходе получим фигню
-  //из за округления на первом шаге. Проверьте на калькуляторе в режиме округления до целых чисел )))
-  return temp;
 }
 
 uint16_t readVcc() {
@@ -125,6 +185,7 @@ uint16_t readVcc() {
 
 void calibrate() {
   INPUT(CALIBRATE_PIN);
+  HIGH(CALIBRATE_PIN);
   if (READ(CALIBRATE_PIN)) { // start calibration
     OUTPUT(LED_PIN);
     _delay_ms(1000);                        //ждём 1000 мс
@@ -178,10 +239,28 @@ int main(void) {
   LOW(LED_PIN);
 
   INPUT(CHARGE_PIN);
+#if defined DEBUG
+  OUTPUT(POWER_PIN);
+  OUTPUT(SIGNAL_PIN);
+#endif
 
 
   sei(); // Global enable interrupts
-  while (1) {}
+  while (1) {
+#if defined DEBUG
+#endif
+
+//    //    mode = CHARGE_OK;
+//    switch (mode) {
+//      case CHARGE_OK:  RED_ON(); break;
+//      case BAT_OK:   RED_OFF(); break;
+//      case BAT_LOW:  GREEN_TOGGLE(); break;
+//      case BAT_STOP:  GREEN_ON(); break;
+//      case ALL_STOP:  break;
+//      default:  break;
+//    }
+    _delay_ms(100);
+  }
 }
 
 
