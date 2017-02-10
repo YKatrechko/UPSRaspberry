@@ -16,7 +16,6 @@ Idea from __hardlock.org.ua__ [1S li-ion indicator](http://hardlock.org.ua/viewt
   4   | STOPPED |  0  |  x   |   x   |  0  |  
 
 ### Hardware
-![ATtiny25/45/85 Pinouts](https://github.com/YKatrechko/UPSRaspberry/blob/master/images/ATtiny-Pinouts-8.jpg "ATtiny25/45/85 Pinouts")
 ![ATtiny25/45/85 Pinouts](images/ATtiny-Pinouts-8.jpg "ATtiny25/45/85 Pinouts")
 
 ##### Fuses
