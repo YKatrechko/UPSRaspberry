@@ -18,7 +18,7 @@ Idea from __hardlock.org.ua__ [1S li-ion indicator](http://hardlock.org.ua/viewt
 ### Hardware
 ![ATtiny25/45/85 Pinouts](images/ATtiny-Pinouts-8.jpg "ATtiny25/45/85 Pinouts")
 
-##### Fuses
+##### Fuses (default):
 - Internal 1 MHz
 - low_fuses = 0x62
 - high_fuses = 0xDF
