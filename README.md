@@ -8,7 +8,7 @@ Idea from __hardlock.org.ua__ [1S li-ion indicator](http://hardlock.org.ua/viewt
 ### Modes
 
  Nmbr |   Mode  | AC  | BATT | TIMER | OUT | LED
------ | ------- | --- | ---- | ----- | --- | ------
+:----:| ------- |:---:|:----:|:-----:|:---:|:------
   0   | AC_OK   |  1  |  x   |   x   |  1  |  
   1   | BAT_OK  |  0  | >3v3 |   x   |  1  |  
   2   | BAT_LOW |  0  | <3v3 | TMR-- |  1  |  
