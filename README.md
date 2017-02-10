@@ -30,3 +30,6 @@ Idea from __hardlock.org.ua__ [1S li-ion indicator](http://hardlock.org.ua/viewt
 - http://www.mosaic-industries.com/embedded-systems/microcontroller-projects/raspberry-pi/on-off-power-controller
 - http://www.atmel.com/images/atmel-2586-avr-8-bit-microcontroller-attiny25-attiny45-attiny85_datasheet.pdf
 
+### Help
+- https://guides.github.com/features/mastering-markdown/
+- https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet
