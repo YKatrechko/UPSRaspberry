@@ -20,7 +20,6 @@ Atmel controller
 ![ATtiny25/45/85 Pinouts](images/ATtiny-Pinouts-8.jpg "ATtiny25/45/85 Pinouts")
 TP4056 1A Standalone Linear Li-lon Battery Charger
 ![TP4056 module](images/tp4056view.jpg "TP4056 module")
-<img src="images/tp4056view.jpg" width="320">
 
 ##### Fuses (default):
 - Internal 1 MHz
