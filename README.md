@@ -16,7 +16,11 @@ Idea from __hardlock.org.ua__ [1S li-ion indicator](http://hardlock.org.ua/viewt
   4   | STOPPED |  0  |  x   |   x   |  0  |  
 
 ### Hardware
+Atmel controller
 ![ATtiny25/45/85 Pinouts](images/ATtiny-Pinouts-8.jpg "ATtiny25/45/85 Pinouts")
+TP4056 1A Standalone Linear Li-lon Battery Charger
+![TP4056 module](images/tp4056view.jpg "TP4056 module")
+
 
 ##### Fuses (default):
 - Internal 1 MHz
@@ -29,6 +33,8 @@ Idea from __hardlock.org.ua__ [1S li-ion indicator](http://hardlock.org.ua/viewt
 - https://pi.gate.ac.uk/pages/mopi.html
 - http://www.mosaic-industries.com/embedded-systems/microcontroller-projects/raspberry-pi/on-off-power-controller
 - http://www.atmel.com/images/atmel-2586-avr-8-bit-microcontroller-attiny25-attiny45-attiny85_datasheet.pdf
+- https://dlnmh9ip6v2uc.cloudfront.net/datasheets/Prototyping/TP4056.pdf
+
 
 ### Help
 - https://guides.github.com/features/mastering-markdown/
