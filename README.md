@@ -18,6 +18,8 @@ Idea from __hardlock.org.ua__ [1S li-ion indicator](http://hardlock.org.ua/viewt
 ### Hardware
 Atmel controller
 ![ATtiny25/45/85 Pinouts](images/ATtiny-Pinouts-8.jpg "ATtiny25/45/85 Pinouts")
+Raspberry Pi GPIO Pinouts
+![Raspberry Pi GPIO Pinouts](images/Raspberry-Pi-GPIO-pinouts.png "Raspberry Pi GPIO Pinouts")
 TP4056 1A Standalone Linear Li-lon Battery Charger
 ![TP4056 module](images/tp4056view.jpg "TP4056 module")
 
