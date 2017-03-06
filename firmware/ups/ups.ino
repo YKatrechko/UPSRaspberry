@@ -247,8 +247,6 @@ int main(void) {
 
   sei(); // Global enable interrupts
   while (1) {
-#if defined DEBUG
-#endif
 
 //    //    mode = CHARGE_OK;
 //    switch (mode) {
